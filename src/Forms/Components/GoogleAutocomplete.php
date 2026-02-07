@@ -3,35 +3,35 @@
 namespace Tapp\FilamentGoogleAutocomplete\Forms\Components;
 
 use Closure;
-use Filament\Forms;
-use Filament\Forms\Components\Component;
-use Filament\Forms\Components\Concerns;
-use Filament\Forms\Set;
-use Illuminate\Support\Arr;
+use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Concerns\HasLabel;
+use Filament\Schemas\Components\Concerns\HasName;
+use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\HtmlString;
 use Tapp\FilamentGoogleAutocomplete\Concerns\CanFormatGoogleParams;
 use Tapp\FilamentGoogleAutocomplete\Concerns\HasGooglePlaceApi;
 
-// Original places API class
-// places API new class
-
 class GoogleAutocomplete extends Component
 {
     use CanFormatGoogleParams;
-    use Concerns\HasName;
     use HasGooglePlaceApi;
+    use HasLabel {
+        getLabel as getBaseLabel;
+    }
+    use HasName;
 
     /**
      * @var view-string
      */
-    protected string $view = 'filament-forms::components.group';
-
-    protected bool|Closure $isRequired = false;
+    protected string $view = 'filament-schemas::components.grid';
 
     protected array $params = [];
 
-    public ?array $withFields = [];
+    public ?array $withFields = null;
 
     protected int|array|string|Closure $autocompleteFieldColumnSpan = 'full';
 
@@ -45,6 +45,8 @@ class GoogleAutocomplete extends Component
 
     protected string|Closure|null $autocompletePlaceholder = null;
 
+    protected $searchResults = [];
+
     final public function __construct(string $name)
     {
         $this->name($name);
@@ -54,19 +56,23 @@ class GoogleAutocomplete extends Component
     {
         $static = app(static::class, ['name' => $name]);
         $static->configure();
-        $static->columnSpanFull();
 
         return $static;
     }
 
-    /**
-     * @return array<Component>
-     */
-    public function getChildComponents(): array
+    protected function setUp(): void
     {
-        $components = [];
+        parent::setUp();
 
-        $components[] = Forms\Components\Select::make($this->getAutocompleteName())
+        // Build initial schema with default fields
+        $this->schema($this->buildSchema());
+
+        $this->columnSpanFull();
+    }
+
+    protected function buildSchema(): array
+    {
+        $selectComponent = Select::make($this->getAutocompleteName())
             ->label($this->getAutocompleteLabel())
             ->native(false)
             ->dehydrated(false)
@@ -81,13 +87,23 @@ class GoogleAutocomplete extends Component
             ->columnSpan($this->getAutocompleteFieldColumnSpan())
             ->getSearchResultsUsing(function (string $search, Set $set): array {
                 $set($this->getAutocompleteName(), null);
-                $response = $this->getPlaceAutocomplete($search);
 
-                $result = $response->collect();
+                try {
+                    $response = $this->getPlaceAutocomplete($search);
 
-                return $this->getPlaceAutocompleteResult($result);
+                    $result = $response->collect();
+
+                    $this->searchResults = $this->getPlaceAutocompleteResult($result);
+
+                    return $this->searchResults;
+                } catch (\Exception $e) {
+                    info('ERROR in search: '.$e->getMessage());
+
+                    return ['error' => 'Search failed: '.$e->getMessage()];
+                }
             })
-            ->afterStateUpdated(function (?string $state, Set $set) {
+            ->getOptionLabelUsing(fn ($value) => $this->searchResults[$value] ?? $value)
+            ->afterStateUpdated(function (?string $state, Set $set, Select $component) {
                 if ($state === null) {
                     foreach ($this->getWithFields() as $field) {
                         $set($field->getName(), null);
@@ -96,9 +112,10 @@ class GoogleAutocomplete extends Component
                     return;
                 }
 
-                $data = $this->getPlace($state);
+                try {
+                    $data = $this->getPlace($state);
 
-                $googleFields = $this->getFormattedApiResults($data);
+                    $googleFields = $this->getFormattedApiResults($data);
 
                 foreach ($this->getWithFields() as $field) {
                     // Check if the field is a Hidden component or has getExtraInputAttributes method
@@ -106,41 +123,34 @@ class GoogleAutocomplete extends Component
                         ? $field->getExtraAttributes()
                         : $field->getExtraInputAttributes();
 
-                    $googleFieldName = count($fieldExtraAttributes) > 0 && isset($fieldExtraAttributes['data-google-field']) ? $fieldExtraAttributes['data-google-field'] : $field->getName();
+                        $googleFieldName = count($fieldExtraAttributes) > 0 && isset($fieldExtraAttributes['data-google-field']) ? $fieldExtraAttributes['data-google-field'] : $field->getName();
 
-                    $googleFieldValue = count($fieldExtraAttributes) > 0 && isset($fieldExtraAttributes['data-google-value']) ? $fieldExtraAttributes['data-google-value'] : 'long_name';
+                        $googleFieldValue = count($fieldExtraAttributes) > 0 && isset($fieldExtraAttributes['data-google-value']) ? $fieldExtraAttributes['data-google-value'] : 'long_name';
 
-                    // if the field contains combined values
-                    if (str_contains($googleFieldName, '{')) {
-                        $value = $this->replaceFieldPlaceholders($googleFieldName, $googleFields, $googleFieldValue);
-                    } else {
-                        // bc: Fixes issue with Carson City, NV.  No administrative_area_level_2 provided in search result.
-                        $value = '';
-                        if (isset($googleFields[$googleFieldName][$googleFieldValue])) {
-                            $value = $googleFields[$googleFieldName][$googleFieldValue] ?: '';
+                        // if the field contains combined values
+                        if (str_contains($googleFieldName, '{')) {
+                            $value = $this->replaceFieldPlaceholders($googleFieldName, $googleFields, $googleFieldValue);
+                        } else {
+                            // bc: Fixes issue with Carson City, NV.  No administrative_area_level_2 provided in search result.
+                            $value = '';
+                            if (isset($googleFields[$googleFieldName][$googleFieldValue])) {
+                                $value = $googleFields[$googleFieldName][$googleFieldValue] ?: '';
+                            }
                         }
-                    }
 
-                    $set($field->getName(), $value);
-                    $field->callAfterStateUpdated();
+                        $set($field->getName(), $value);
+                        $field->callAfterStateUpdated();
+                    }
+                } catch (\Exception $e) {
+                    info('ERROR in afterStateUpdated: '.$e->getMessage());
                 }
             });
 
-        $addressData = Arr::map(
-            $this->getWithFields(),
-            function (Component $component) {
-                return $component;
-            }
-        );
+        $addressData = $this->getWithFields();
 
-        $allComponents = array_merge($components, $addressData);
+        $allComponents = array_merge([$selectComponent], $addressData);
 
-        return [
-            Forms\Components\Grid::make($this->getAddressFieldsColumns())
-                ->schema(
-                    $allComponents
-                ),
-        ];
+        return $allComponents;
     }
 
     protected function replaceFieldPlaceholders($googleField, $googleFields, $googleFieldValue)
@@ -179,34 +189,40 @@ class GoogleAutocomplete extends Component
         return [];
     }
 
-    public function withFields(null|array|string|\Closure $fields): static
+    public function withFields(null|array|string|Closure $fields): static
     {
         $this->withFields = $fields;
+
+        // Rebuild schema with new fields
+        $this->schema($this->buildSchema())->columns($this->autocompleteFieldColumnSpan);
 
         return $this;
     }
 
     public function getWithFields(): ?array
     {
-        if (empty($this->withFields)) {
+        if ($this->withFields === null) {
+            // Add default fields if empty
             return [
-                Forms\Components\TextInput::make('address')
+                TextInput::make('address')
                     ->extraInputAttributes([
                         'data-google-field' => '{street_number} {route}, {sublocality_level_1}',
                     ]),
-                Forms\Components\TextInput::make('city')
+                TextInput::make('city')
                     ->extraInputAttributes([
                         'data-google-field' => 'locality',
                     ]),
-                Forms\Components\TextInput::make('country'),
-                Forms\Components\TextInput::make('zip')
+                TextInput::make('country'),
+                TextInput::make('zip')
                     ->extraInputAttributes([
                         'data-google-field' => 'postal_code',
                     ]),
             ];
         }
 
-        return $this->evaluate($this->withFields);
+        $evaluated = $this->evaluate($this->withFields);
+
+        return $evaluated;
     }
 
     public function autocompleteFieldColumnSpan(int|array|string|\Closure $autocompleteFieldColumnSpan = 'full'): static
@@ -223,7 +239,7 @@ class GoogleAutocomplete extends Component
         return $this->evaluate($this->autocompleteFieldColumnSpan);
     }
 
-    public function addressFieldsColumns(null|array|string|\Closure $addressFieldsColumns): static
+    public function addressFieldsColumns(null|array|string|Closure $addressFieldsColumns): static
     {
         $this->addressFieldsColumns = $addressFieldsColumns;
 
@@ -242,7 +258,7 @@ class GoogleAutocomplete extends Component
         return $this->evaluate($this->addressFieldsColumns);
     }
 
-    public function autocompleteSearchDebounce(int|\Closure $autocompleteSearchDebounce = 2000): static
+    public function autocompleteSearchDebounce(int|Closure $autocompleteSearchDebounce = 2000): static
     {
         $this->autocompleteSearchDebounce = $autocompleteSearchDebounce;
 
@@ -279,7 +295,7 @@ class GoogleAutocomplete extends Component
 
     protected function getAutocompleteName(): string
     {
-        return $this->evaluate($this->autocompleteName) ?? 'google_autocomplete_'.$this->name;
+        return $this->evaluate($this->autocompleteName) ?? 'google_autocomplete_'.$this->getName();
     }
 
     public function autocompletePlaceholder(string|Closure|null $placeholder): static

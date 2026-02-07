@@ -1,4 +1,4 @@
-# Filament Google Autcomplete Field
+# Filament Google Autocomplete Field
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/tapp/filament-google-autocomplete-field.svg?style=flat-square)](https://packagist.org/packages/tapp/filament-google-autocomplete-field)
 ![GitHub Tests Action Status](https://github.com/TappNetwork/filament-google-autocomplete-field/actions/workflows/run-tests.yml/badge.svg)
@@ -74,15 +74,15 @@ GOOGLE_PLACES_API_KEY=your_google_place_api_key_here
 
 ## Appareance
 
-![Filament Google Autcomplete Field](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/main/docs/autocomplete02.png)
+![Filament Google Autcomplete Field](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/4.x/docs/autocomplete02.png)
 
-![Filament Google Autcomplete Field](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/main/docs/autocomplete03.png)
+![Filament Google Autcomplete Field](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/4.x/docs/autocomplete03.png)
 
-![Filament Google Autcomplete Field](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/main/docs/autocomplete04.png)
+![Filament Google Autcomplete Field](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/4.x/docs/autocomplete04.png)
 
-![Filament Google Autcomplete Field](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/main/docs/autocomplete05.png)
+![Filament Google Autcomplete Field](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/4.x/docs/autocomplete05.png)
 
-![Filament Google Autcomplete Field](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/main/docs/autocomplete06.png)
+![Filament Google Autcomplete Field](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/4.x/docs/autocomplete06.png)
 
 ## Usage
 
@@ -131,7 +131,7 @@ Forms\Components\Fieldset::make('Google Search')
     ]),
 ```
 
-![Fieldset Layout](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/main/docs/fieldset_layout.png)
+![Fieldset Layout](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/4.x/docs/fieldset_layout.png)
 
 ```php
 Forms\Components\Section::make('Google Search')
@@ -141,7 +141,7 @@ Forms\Components\Section::make('Google Search')
     ]),
 ```
 
-![Section Layout](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/main/docs/section_layout.png)
+![Section Layout](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/4.x/docs/section_layout.png)
 
 ## Places API (original) and Places API (New)
 
@@ -351,7 +351,7 @@ GoogleAutocomplete::make('google_search')
     ]),
 ```
 
-![Example with modified label, autocompleteLabel, and autocompletePlaceholder](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/main/docs/label_placeholder.jpg)
+![Example with modified label, autocompleteLabel, and autocompletePlaceholder](https://raw.githubusercontent.com/TappNetwork/filament-google-autocomplete-field/4.x/docs/label_placeholder.jpg)
 
 ## Google API Options
 
