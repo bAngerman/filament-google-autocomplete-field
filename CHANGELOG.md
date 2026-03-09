@@ -2,6 +2,20 @@
 
 All notable changes to `filament-google-autocomplete-field` will be documented in this file.
 
+## v4.0.8 - 2026-03-09
+
+### What's Changed
+
+* Bump actions/checkout from 4 to 6 by @dependabot[bot] in https://github.com/TappNetwork/filament-google-autocomplete-field/pull/71
+* Bump stefanzweifel/git-auto-commit-action from 5 to 7 by @dependabot[bot] in https://github.com/TappNetwork/filament-google-autocomplete-field/pull/72
+* Fix autocompleteSearchDebounce param leaking into Places API request by @aghayeff in https://github.com/TappNetwork/filament-google-autocomplete-field/pull/76
+
+### New Contributors
+
+* @aghayeff made their first contribution in https://github.com/TappNetwork/filament-google-autocomplete-field/pull/76
+
+**Full Changelog**: https://github.com/TappNetwork/filament-google-autocomplete-field/compare/v4.0.7...v4.0.8
+
 ## v4.0.7 - 2026-01-22
 
 ### What's Changed
