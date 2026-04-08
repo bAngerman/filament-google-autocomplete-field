@@ -8,11 +8,11 @@ it('hydrates countries from a closure without casting errors', function () {
     $component = GoogleAutocomplete::make('address')
         ->countries(fn () => 'DE');
 
-    $hydrate = new \ReflectionMethod($component, 'hydrateGoogleApiParams');
+    $hydrate = new ReflectionMethod($component, 'hydrateGoogleApiParams');
     $hydrate->setAccessible(true);
     $hydrate->invoke($component);
 
-    $paramsProp = new \ReflectionProperty($component, 'params');
+    $paramsProp = new ReflectionProperty($component, 'params');
     $paramsProp->setAccessible(true);
     $params = $paramsProp->getValue($component);
 
@@ -25,11 +25,11 @@ it('hydrates language from a closure for the legacy places api', function () {
     $component = GoogleAutocomplete::make('address')
         ->language(fn () => 'fr');
 
-    $hydrate = new \ReflectionMethod($component, 'hydrateGoogleApiParams');
+    $hydrate = new ReflectionMethod($component, 'hydrateGoogleApiParams');
     $hydrate->setAccessible(true);
     $hydrate->invoke($component);
 
-    $paramsProp = new \ReflectionProperty($component, 'params');
+    $paramsProp = new ReflectionProperty($component, 'params');
     $paramsProp->setAccessible(true);
     $params = $paramsProp->getValue($component);
 
@@ -42,11 +42,11 @@ it('hydrates place types from a closure for the legacy places api', function () 
     $component = GoogleAutocomplete::make('address')
         ->placeTypes(fn () => 'establishment');
 
-    $hydrate = new \ReflectionMethod($component, 'hydrateGoogleApiParams');
+    $hydrate = new ReflectionMethod($component, 'hydrateGoogleApiParams');
     $hydrate->setAccessible(true);
     $hydrate->invoke($component);
 
-    $paramsProp = new \ReflectionProperty($component, 'params');
+    $paramsProp = new ReflectionProperty($component, 'params');
     $paramsProp->setAccessible(true);
     $params = $paramsProp->getValue($component);
 
@@ -60,11 +60,11 @@ it('hydrates included region codes from a closure for the new places api', funct
         ->placesApiNew()
         ->includedRegionCodes(fn () => ['US', 'CA']);
 
-    $hydrate = new \ReflectionMethod($component, 'hydrateGoogleApiParams');
+    $hydrate = new ReflectionMethod($component, 'hydrateGoogleApiParams');
     $hydrate->setAccessible(true);
     $hydrate->invoke($component);
 
-    $paramsProp = new \ReflectionProperty($component, 'params');
+    $paramsProp = new ReflectionProperty($component, 'params');
     $paramsProp->setAccessible(true);
     $params = $paramsProp->getValue($component);
 
