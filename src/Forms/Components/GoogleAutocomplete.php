@@ -167,7 +167,7 @@ class GoogleAutocomplete extends Component
 
     protected function getPlaceAutocompleteResult($result)
     {
-        if ($this->placesApiNew) {
+        if ($this->getPlacesApiNew()) {
             if (isset($result['suggestions']) && ! empty($result['suggestions'])) {
                 $searchResults = collect($result['suggestions'])->mapWithKeys(function (array $item, int $key) {
                     return [$item['placePrediction']['placeId'] => $item['placePrediction']['text']['text']];
@@ -193,7 +193,7 @@ class GoogleAutocomplete extends Component
         $this->withFields = $fields;
 
         // Rebuild schema with new fields
-        $this->schema($this->buildSchema())->columns($this->autocompleteFieldColumnSpan);
+        $this->schema($this->buildSchema())->columns($this->getAutocompleteFieldColumnSpan());
 
         return $this;
     }
@@ -228,8 +228,6 @@ class GoogleAutocomplete extends Component
     {
         $this->autocompleteFieldColumnSpan = $autocompleteFieldColumnSpan;
 
-        $this->params['autocompleteFieldColumnSpan'] = $autocompleteFieldColumnSpan;
-
         return $this;
     }
 
@@ -260,8 +258,6 @@ class GoogleAutocomplete extends Component
     public function autocompleteSearchDebounce(int|Closure $autocompleteSearchDebounce = 2000): static
     {
         $this->autocompleteSearchDebounce = $autocompleteSearchDebounce;
-
-        $this->params['autocompleteSearchDebounce'] = $autocompleteSearchDebounce;
 
         return $this;
     }
