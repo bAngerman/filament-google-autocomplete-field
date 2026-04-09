@@ -2,6 +2,18 @@
 
 All notable changes to `filament-google-autocomplete-field` will be documented in this file.
 
+## v4.1.0 - 2026-04-09
+
+### What's Changed
+
+* Laravel 13.x Compatibility by @laravel-shift in https://github.com/TappNetwork/filament-google-autocomplete-field/pull/77
+
+### New Contributors
+
+* @laravel-shift made their first contribution in https://github.com/TappNetwork/filament-google-autocomplete-field/pull/77
+
+**Full Changelog**: https://github.com/TappNetwork/filament-google-autocomplete-field/compare/v4.0.8...v4.1.0
+
 ## v4.0.8 - 2026-03-09
 
 ### What's Changed
