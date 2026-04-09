@@ -2,6 +2,16 @@
 
 All notable changes to `filament-google-autocomplete-field` will be documented in this file.
 
+## v4.1.2 - 2026-04-09
+
+### What's Changed
+
+* Update test workflow by @andreia in https://github.com/TappNetwork/filament-google-autocomplete-field/pull/84
+* Bump dependabot/fetch-metadata from 2.5.0 to 3.0.0 by @dependabot[bot] in https://github.com/TappNetwork/filament-google-autocomplete-field/pull/80
+* Bump ramsey/composer-install from 3 to 4 by @dependabot[bot] in https://github.com/TappNetwork/filament-google-autocomplete-field/pull/78
+
+**Full Changelog**: https://github.com/TappNetwork/filament-google-autocomplete-field/compare/v4.1.1...v4.1.2
+
 ## v4.1.1 - 2026-04-09
 
 ### What's Changed
