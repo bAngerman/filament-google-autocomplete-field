@@ -79,10 +79,9 @@ trait HasGooglePlaceApi
     protected function getPlaceAutocomplete($search)
     {
         $this->setGoogleApi();
+        $this->hydrateGoogleApiParams();
 
-        unset($this->params['autocompleteFieldColumnSpan']);
-
-        if ($this->placesApiNew) {
+        if ($this->getPlacesApiNew()) {
             return $this->googlePlaces->autocomplete($search, false, ['*'], $this->params);
         }
 
@@ -92,10 +91,11 @@ trait HasGooglePlaceApi
     protected function getPlace(string $placeId)
     {
         $this->setGoogleApi();
+        $this->hydrateGoogleApiParams();
 
         $detailParams = [];
 
-        if ($this->placesApiNew) {
+        if ($this->getPlacesApiNew()) {
             $detailParams['languageCode'] = $this->params['languageCode'] ?? null;
 
             return $this->googlePlaces->placeDetails($placeId, ['*'], $detailParams);
@@ -110,7 +110,7 @@ trait HasGooglePlaceApi
     {
         $response = $data->collect();
 
-        if ($this->placesApiNew) {
+        if ($this->getPlacesApiNew()) {
             $addressComponents = $response['addressComponents'];
 
             $latLngFields = [
@@ -189,8 +189,6 @@ trait HasGooglePlaceApi
 
     public function includePureServiceAreaBusinesses(bool|Closure $includePureServiceAreaBusinesses = false): static
     {
-        $this->params['includePureServiceAreaBusinesses'] = $includePureServiceAreaBusinesses;
-
         $this->includePureServiceAreaBusinesses = $includePureServiceAreaBusinesses;
 
         return $this;
@@ -207,7 +205,7 @@ trait HasGooglePlaceApi
 
         $this->currentApiNamingConventions = $this->apiNamingConventions['originalApi'];
 
-        if ($this->placesApiNew) {
+        if ($this->getPlacesApiNew()) {
             $googleClass = 'SKAgarwal\GoogleApi\PlacesNew\GooglePlaces';
 
             $this->currentApiNamingConventions = $this->apiNamingConventions['newApi'];
@@ -220,35 +218,161 @@ trait HasGooglePlaceApi
         );
     }
 
+    /**
+     * Merges evaluated Google Places API parameters into {@see $params}.
+     * Call before autocomplete or place-details requests so {@see Closure} options resolve with the correct utility injection (e.g. Get).
+     */
+    protected function hydrateGoogleApiParams(): void
+    {
+        foreach ([
+            'includePureServiceAreaBusinesses',
+            'components',
+            'includedRegionCodes',
+            'languageCode',
+            'language',
+            'location',
+            'locationBias',
+            'locationbias',
+            'locationRestriction',
+            'locationrestriction',
+            'inputOffset',
+            'offset',
+            'origin',
+            'radius',
+            'regionCode',
+            'region',
+            'sessionToken',
+            'sessiontoken',
+            'includedPrimaryTypes',
+            'types',
+        ] as $key) {
+            unset($this->params[$key]);
+        }
+
+        $isNew = $this->getPlacesApiNew();
+
+        $this->params['includePureServiceAreaBusinesses'] = $this->getIncludePureServiceAreaBusinesses();
+
+        if ($this->countries !== null) {
+            $countries = $this->evaluate($this->countries);
+            $this->params['components'] = $countries !== null
+                ? $this->getFormattedCountries(Arr::wrap($countries))
+                : null;
+        }
+
+        if ($this->includedRegionCodes !== null) {
+            $includedRegionCodes = $this->evaluate($this->includedRegionCodes);
+            if ($includedRegionCodes !== null) {
+                $this->params['includedRegionCodes'] = Arr::wrap($includedRegionCodes);
+            }
+        }
+
+        if ($this->language !== null) {
+            $language = $this->evaluate($this->language);
+            if ($isNew) {
+                $this->params['languageCode'] = $language;
+            } else {
+                $this->params['language'] = $language;
+            }
+        }
+
+        if ($this->location !== null) {
+            $this->params['location'] = $this->evaluate($this->location);
+        }
+
+        if ($this->locationBias !== null) {
+            $locationBias = $this->evaluate($this->locationBias);
+            if ($isNew) {
+                $this->params['locationBias'] = $locationBias;
+            } else {
+                $this->params['locationbias'] = $locationBias;
+            }
+        }
+
+        if ($this->locationRestriction !== null) {
+            $locationRestriction = $this->evaluate($this->locationRestriction);
+            if ($isNew) {
+                $this->params['locationRestriction'] = $locationRestriction;
+            } else {
+                $this->params['locationrestriction'] = $locationRestriction;
+            }
+        }
+
+        if ($this->offset !== null) {
+            $offset = $this->evaluate($this->offset);
+            if ($isNew) {
+                $this->params['inputOffset'] = $offset;
+            } else {
+                $this->params['offset'] = $offset;
+            }
+        }
+
+        if ($this->origin !== null) {
+            $this->params['origin'] = $this->evaluate($this->origin);
+        }
+
+        if ($this->radius !== null) {
+            $this->params['radius'] = $this->evaluate($this->radius);
+        }
+
+        if ($this->region !== null) {
+            $region = $this->evaluate($this->region);
+            if ($isNew) {
+                $this->params['regionCode'] = $region;
+            } else {
+                $this->params['region'] = $region;
+            }
+        }
+
+        if ($this->sessionToken !== null) {
+            $sessionToken = $this->evaluate($this->sessionToken);
+            if ($isNew) {
+                $this->params['sessionToken'] = $sessionToken;
+            } else {
+                $this->params['sessiontoken'] = $sessionToken;
+            }
+        }
+
+        if ($this->placeTypes !== null) {
+            $placeTypes = $this->evaluate($this->placeTypes);
+            $wrapped = Arr::wrap($placeTypes);
+            if ($isNew) {
+                $this->params['includedPrimaryTypes'] = $wrapped;
+            } else {
+                $this->params['types'] = $this->getFormattedPlaceTypes($wrapped);
+            }
+        }
+    }
+
     public function countries(array|string|Closure|null $countries): static
     {
-        $countries = Arr::wrap($countries);
-
-        $this->countries = $countries;
-
-        $this->params['components'] = $this->getFormattedCountries($countries);
+        $this->countries = $countries === null ? [] : $countries;
 
         return $this;
     }
 
-    public function getCountries(): ?string
+    public function getCountries(): string|array|null
     {
+        if ($this->countries === null) {
+            return null;
+        }
+
         return $this->evaluate($this->countries);
     }
 
     public function includedRegionCodes(array|Closure|null $includedRegionCodes): static
     {
-        $includedRegionCodes = Arr::wrap($includedRegionCodes);
-
-        $this->includedRegionCodes = $includedRegionCodes;
-
-        $this->params['includedRegionCodes'] = $includedRegionCodes;
+        $this->includedRegionCodes = $includedRegionCodes === null ? [] : $includedRegionCodes;
 
         return $this;
     }
 
     public function getIncludedRegionCodes(): ?array
     {
+        if ($this->includedRegionCodes === null) {
+            return null;
+        }
+
         return $this->evaluate($this->includedRegionCodes);
     }
 
@@ -256,169 +380,123 @@ trait HasGooglePlaceApi
     {
         $this->language = $language;
 
-        if ($this->placesApiNew) {
-            $this->params['languageCode'] = $language;
-        } else {
-            $this->params['language'] = $language;
-        }
-
         return $this;
     }
 
     public function getLanguage(): ?string
     {
-        return $this->evaluate($this->language);
+        return $this->language === null ? null : $this->evaluate($this->language);
     }
 
     public function location(string|Closure|null $location): static
     {
         $this->location = $location;
 
-        $this->params['location'] = $location;
-
         return $this;
     }
 
     public function getLocation(): ?string
     {
-        return $this->evaluate($this->location);
+        return $this->location === null ? null : $this->evaluate($this->location);
     }
 
     public function locationBias(string|array|Closure|null $locationBias): static
     {
         $this->locationBias = $locationBias;
 
-        if ($this->placesApiNew) {
-            $this->params['locationBias'] = $locationBias;
-        } else {
-            $this->params['locationbias'] = $locationBias;
-        }
-
         return $this;
     }
 
     public function getLocationBias(): null|string|array
     {
-        return $this->evaluate($this->locationBias);
+        return $this->locationBias === null ? null : $this->evaluate($this->locationBias);
     }
 
     public function locationRestriction(string|Closure|null $locationRestriction): static
     {
         $this->locationRestriction = $locationRestriction;
 
-        if ($this->placesApiNew) {
-            $this->params['locationRestriction'] = $locationRestriction;
-        } else {
-            $this->params['locationrestriction'] = $locationRestriction;
-        }
-
         return $this;
     }
 
     public function getLocationRestriction(): ?string
     {
-        return $this->evaluate($this->locationRestriction);
+        return $this->locationRestriction === null ? null : $this->evaluate($this->locationRestriction);
     }
 
     public function offset(int|Closure|null $offset): static
     {
         $this->offset = $offset;
 
-        if ($this->placesApiNew) {
-            $this->params['inputOffset'] = $offset;
-        } else {
-            $this->params['offset'] = $offset;
-        }
-
         return $this;
     }
 
     public function getOffset(): ?int
     {
-        return $this->evaluate($this->offset);
+        return $this->offset === null ? null : $this->evaluate($this->offset);
     }
 
     public function origin(string|Closure|null $origin): static
     {
         $this->origin = $origin;
 
-        $this->params['origin'] = $origin;
-
         return $this;
     }
 
     public function getOrigin(): ?string
     {
-        return $this->evaluate($this->origin);
+        return $this->origin === null ? null : $this->evaluate($this->origin);
     }
 
     public function radius(int|Closure|null $radius): static
     {
         $this->radius = $radius;
 
-        $this->params['radius'] = $radius;
-
         return $this;
     }
 
     public function getRadius(): ?int
     {
-        return $this->evaluate($this->radius);
+        return $this->radius === null ? null : $this->evaluate($this->radius);
     }
 
     public function region(string|Closure|null $region): static
     {
         $this->region = $region;
 
-        if ($this->placesApiNew) {
-            $this->params['regionCode'] = $region;
-        } else {
-            $this->params['region'] = $region;
-        }
-
         return $this;
     }
 
     public function getRegion(): ?string
     {
-        return $this->evaluate($this->region);
+        return $this->region === null ? null : $this->evaluate($this->region);
     }
 
     public function sessionToken(string|Closure|null $sessionToken): static
     {
         $this->sessionToken = $sessionToken;
 
-        if ($this->placesApiNew) {
-            $this->params['sessionToken'] = $sessionToken;
-        } else {
-            $this->params['sessiontoken'] = $sessionToken;
-        }
-
         return $this;
     }
 
     public function getSessionToken(): ?string
     {
-        return $this->evaluate($this->sessionToken);
+        return $this->sessionToken === null ? null : $this->evaluate($this->sessionToken);
     }
 
     public function placeTypes(array|string|Closure|null $placeTypes): static
     {
-        $placeTypes = Arr::wrap($placeTypes);
-
-        $this->placeTypes = $placeTypes;
-
-        if ($this->placesApiNew) {
-            $this->params['includedPrimaryTypes'] = $placeTypes;
-        } else {
-            $this->params['types'] = $this->getFormattedPlaceTypes($placeTypes);
-        }
+        $this->placeTypes = $placeTypes === null ? [] : $placeTypes;
 
         return $this;
     }
 
-    public function getPlaceTypes(): ?string
+    public function getPlaceTypes(): string|array|null
     {
+        if ($this->placeTypes === null) {
+            return null;
+        }
+
         return $this->evaluate($this->placeTypes);
     }
 }

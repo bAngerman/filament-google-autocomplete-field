@@ -12,9 +12,9 @@ use Filament\Notifications\NotificationsServiceProvider;
 use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
+use Illuminate\Testing\TestResponse;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
-use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
 use Tapp\FilamentGoogleAutocomplete\FilamentGoogleAutocompleteServiceProvider;
 
 class TestCase extends Orchestra
@@ -22,7 +22,7 @@ class TestCase extends Orchestra
     /**
      * The latest response from the application.
      *
-     * @var \Illuminate\Testing\TestResponse|null
+     * @var TestResponse|null
      */
     public static $latestResponse;
 
@@ -35,7 +35,6 @@ class TestCase extends Orchestra
     {
         return [
             ActionsServiceProvider::class,
-            BladeCaptureDirectiveServiceProvider::class,
             BladeHeroiconsServiceProvider::class,
             BladeIconsServiceProvider::class,
             FilamentServiceProvider::class,
